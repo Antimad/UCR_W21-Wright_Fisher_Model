@@ -56,8 +56,8 @@ def mutate(population):
     :param population: current size of the population
     :return:
     """
+    mutant_populous = []
     if population > 0:
-        mutant_populous = []
         mutants = np.random.binomial(population, mutation["Rate"]*s_length)
         population -= mutants
 
