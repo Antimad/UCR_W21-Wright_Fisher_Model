@@ -48,32 +48,39 @@ init_probability = init_rate/np.sum(init_rate)
 chosen = np.random.multinomial(pop_size, pvals=init_probability)
 
 
-def mutate(population):
+def select_mutant():
+    return np.random.binomial(pop_size, mutation["Rate"] * s_length)
+
+
+def mutate(selected_to_mutate):
     """
-    - We take the population size, then get a random number of mutants limited to the size of the population
-    - We then remove those mutants from the total population.
-
-    :param population: current size of the population
-    :return:
+    :param selected_to_mutate: list of sites, where the len() is the number of individuals selected to be mutated in
+                               the population.
+    :return: A dictionary of the new mutant sequences.
     """
-    mutant_populous = []
-    if population > 0:
-        mutants = np.random.binomial(population, mutation["Rate"]*s_length)
-        population -= mutants
 
-        sequence_sites = np.random.randint(s_length, size=mutants)
+    def new_sequence():
+        """
+        Magic!
 
-        for sequence_site in sequence_sites:
-            """
-            I'm not too sure about this statement below, going off your program it seems like the initial sequence 
-            will always be the starting haplotype 
-            
-            Again, the fitness variable here seems to always stay the same since the sum of the haplotypes will always
-            be 0. Should I then randomize the mutation rates of each site in the haplotype?
-            """
-            sequence = haplotypes
-            sequence[sequence_site] = 1.0
-            fitness = 1 + np.sum(haplotypes*sequence)
-            mutant_populous.append(fitness)
+        On a serious note. It seems that your clone function in your Species class creates a new sequence for each
+        mutation however, I can't figure out where or how it creates this new sequence. To me, I would start with a
+        blank slate, but your program creates a unique sequence per mutation.
+
+        :return: Magic!
+        """
+        return ["I'm really not sure yet..."]
+
+    mutant_populous = {
+        "Sequence": [],
+        "Fitness": []
+    }
+    for individual, site_location in enumerate(selected_to_mutate):
+        mutation_sequence = new_sequence()
+        mutation_sequence[site_location] += (1 - int(mutation_sequence[site_location]))
+        fitness = 1 + np.sum(haplotypes * mutation_sequence)
+
+        mutant_populous["Sequence"].append(mutation_sequence)
+        mutant_populous["Fitness"].append(fitness)
 
     return mutant_populous
