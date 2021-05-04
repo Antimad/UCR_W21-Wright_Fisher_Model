@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import pandas as pd
 
 """
 ####### Initializing starting parameters. ########
@@ -46,6 +47,8 @@ growth_monitor = {
     "Count of Unique Generational Sequences": [base_population["Diversity"]],
     "Population": [pop_size]
 }
+
+Data = []
 
 haplotypes = np.zeros(s_length)
 
@@ -117,22 +120,31 @@ for generation in range(generations):
     Those who will mutate will be chosen 
     """
     mutated_population = []
-    generational_monitor = {}
+    generational_monitor = {"Sequence": [],
+                            "Size": []}
 
     for population in range(len(growth_monitor["Population"])):
         mutants = select_mutant()
         mutation_sites = select_site_to_mutate(mutants)
         mutation_seq_fit = mutate(mutation_sites)
-        growth_monitor["Population"][population] -= len(mutation_sites)
+        # growth_monitor["Population"][population] -= len(mutation_sites)
 
         for n_mutants, mutant_sequence in enumerate(mutation_seq_fit["Sequence"]):
+            unique = True
             for previous, added_m_sequences in enumerate(mutated_population):
                 if np.array_equal(mutant_sequence, added_m_sequences):
-                    generational_monitor[added_m_sequences] += 1  # Given my mutation step, this will always be 1
+                    generational_monitor["Size"][previous] += 1
+                    unique = False
                     continue
-                if not np.array(mutant_sequence, added_m_sequences):
-                    generational_monitor[mutant_sequence] = 1
-                    mutated_population.append(mutant_sequence)
+            if unique:
+                generational_monitor["Sequence"].append(mutant_sequence)
+                generational_monitor["Size"].append(1)
+                mutated_population.append(mutant_sequence)
 
-    growth_monitor["Generational Sequences"].append(np.array(generational_monitor.keys()))
-    growth_monitor["Count of Unique Generational Sequences"].append(np.array(generational_monitor.values()))
+    # growth_monitor["Generational Sequences"].append(np.array(generational_monitor.keys()))
+    # growth_monitor["Count of Unique Generational Sequences"].append(np.array(generational_monitor.values()))
+    Data.append(generational_monitor)
+
+info = pd.DataFrame(Data)
+info = info.T
+info.to_json("Results.json")
