@@ -1,9 +1,8 @@
 import numpy as np
 
-# Data = pd.read_json("Results.json").T
 mutation_rate = 0.001
 
-Data = np.load("Simulation_Data_2.csv", allow_pickle=True)
+Data = np.load("data/trajectory.npz", allow_pickle=True)
 
 
 Pop_Size = 1000  # Population size
@@ -29,6 +28,29 @@ def calc_xij(generation, i, j):
     return x_ij_count
 
 
+def covariance_builder(generation: np.array, size: np.array):
+    covariance_matrix = np.zeros((50, 50))
+    generation_with_size = (generation.T * size).T
+    generation_with_size = sum(generation_with_size)
+    generation_with_size = generation_with_size / Pop_Size
+    covariance = []
+    for i_idx, x_i_sum in enumerate(generation_with_size):
+        covariance_list = []
+        for j_idx, x_j_sum in enumerate(generation_with_size):
+            if i_idx == j_idx:
+                covariance_diagonal = (x_i_sum * (1 - x_i_sum))
+                covariance_list.append(covariance_diagonal)
+            else:
+                x_ij = calc_xij(generation, i=i_idx, j=j_idx)
+                off_diagonal_covariance = (x_ij - (x_i_sum * x_j_sum))  # / sample_properties["pop_size"]
+                covariance_list.append(off_diagonal_covariance)
+        covariance.append(np.array(covariance_list))
+    covariance = np.array(covariance)
+    covariance_matrix += covariance
+
+    return covariance_matrix
+
+
 def inference(generations):
     part_2_helper = 0
     part_2b_summation = 0
@@ -46,21 +68,8 @@ def inference(generations):
         Using this information we will know the number of individuals where i=j. Where the sites of each individual is 
         the same and possess a mutation. Then we take it and multiply it by (1 - itself).
         """
-        generational_covariance = []
-        for abv_i_idx, x_i_sum in enumerate(complete_gen_sum):
 
-            covariance_list = []
-            for abv_j_idx, x_j_sum in enumerate(complete_gen_sum):
-                if abv_i_idx == abv_j_idx:
-                    covariance_diagonal = (x_i_sum * (1 - x_i_sum)) / Pop_Size
-                    covariance_list.append(covariance_diagonal)
-                else:
-                    x_ij = calc_xij(generation=sequences, i=abv_i_idx, j=abv_j_idx)
-                    covariance = (x_ij - (x_i_sum*x_j_sum)) / Pop_Size  # Second portion of the covariance
-                    covariance_list.append(covariance)
-
-            generational_covariance.append(np.array(covariance_list))
-        generational_covariance = np.array(generational_covariance)
+        generational_covariance = covariance_builder(generation=sequences, size=sizes)
         covariance_matrix += generational_covariance
 
         """
