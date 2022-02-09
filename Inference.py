@@ -1,8 +1,11 @@
 import numpy as np
+import os
+from multiprocessing import Pool
+import matplotlib.pyplot as plt
 
 mutation_rate = 0.001
 
-Data = np.load("data/trajectory.npz", allow_pickle=True)
+# Data = np.load("data/trajectory.npz", allow_pickle=True)
 
 
 Pop_Size = 1000  # Population size
@@ -52,6 +55,8 @@ def covariance_builder(generation: np.array, size: np.array):
 
 
 def inference(generations):
+    inferred_selections = []
+    generations = np.load(generations, allow_pickle=True)
     part_2_helper = 0
     part_2b_summation = 0
     covariance_matrix = np.zeros((50, 50))
@@ -85,7 +90,7 @@ def inference(generations):
 
     seq_k = generations["Sequence"][-1]
     size_k = generations["Size"][-1]
-    t_k = sum((seq_k.T * size_k).T)  # Second generation info
+    t_k = sum((seq_k.T * size_k).T)  # Last generation info
 
     for j_index, x_i in enumerate(part_2b_summation):
         part_1a = covariance_matrix[j_index].sum()
@@ -96,8 +101,26 @@ def inference(generations):
         s_i = ((part_1a + part_1b)**-1) * (part_2a - part_2b)
         inferred_selections.append(s_i)
 
+    selection_coefficients = sum(inferred_selections)
+    print("Done!")
 
-inferred_selections = []
-inference(generations=Data)
+    return selection_coefficients
 
-selection_coefficients = sum(inferred_selections)
+
+inputs = [os.path.join("data", file) for root, dirs, files in os.walk("data", topdown=False) for file in files]
+
+inference(inputs[45])
+
+"""
+if __name__ == '__main__':
+    pool = Pool(11)
+    outputs = pool.map(inference, inputs)
+
+plt.hist(x=outputs)
+plt.ylabel("Population")
+plt.xlabel("Selection Coefficients")
+plt.title("Inferred Selection Distribution")
+
+plt.savefig("Selection Inference Distribution")
+
+"""
