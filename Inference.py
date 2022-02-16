@@ -61,8 +61,8 @@ def inference(generations):
     part_2b_summation = 0
     covariance_matrix = np.zeros((50, 50))
     for gen_num, sequences in enumerate(generations["Sequence"]):
-        sizes = generations["Size"][gen_num]
-        complete_gen_sum = (sequences.T * sizes).T
+        sizes = generations["Size"][gen_num]  # Gets the size of each sequence in the generation
+        complete_gen_sum = (sequences.T * sizes).T  # Multiplies the size by the generation to store the size in the seq
         complete_gen_sum = sum(complete_gen_sum)
         part_2_helper += complete_gen_sum
 
@@ -86,19 +86,20 @@ def inference(generations):
 
     seq_0 = generations["Sequence"][0]
     size_0 = generations["Size"][0]
-    t_0 = sum((seq_0.T * size_0).T)  # First generation info
+    x_0 = sum((seq_0.T * size_0).T)  # First generation info
 
     seq_k = generations["Sequence"][-1]
     size_k = generations["Size"][-1]
-    t_k = sum((seq_k.T * size_k).T)  # Last generation info
+    x_k = sum((seq_k.T * size_k).T)  # Last generation info
 
+    regularized_covariance = covariance_matrix + np.identity(50)
+    inverted_covariance = np.linalg.inv(regularized_covariance)
     for j_index, x_i in enumerate(part_2b_summation):
-        part_1a = covariance_matrix[j_index].sum()
-        part_1b = 1
-        part_2a = t_k[j_index] - t_0[j_index]
+        part_1 = inverted_covariance[j_index].sum()
+        part_2a = x_k[j_index] - x_0[j_index]
         part_2b = x_i
 
-        s_i = ((part_1a + part_1b)**-1) * (part_2a - part_2b)
+        s_i = part_1 * (part_2a - part_2b)
         inferred_selections.append(s_i)
 
     selection_coefficients = sum(inferred_selections)
@@ -107,9 +108,9 @@ def inference(generations):
     return selection_coefficients
 
 
-inputs = [os.path.join("data", file) for root, dirs, files in os.walk("data", topdown=False) for file in files]
+inputs = [os.path.join("Data", file) for root, dirs, files in os.walk("Data", topdown=False) for file in files]
 
-inference(inputs[45])
+answer = inference(inputs[45])
 
 """
 if __name__ == '__main__':
