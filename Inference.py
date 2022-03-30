@@ -7,15 +7,27 @@ mutation_rate = 0.001
 
 # Data = np.load("data/trajectory.npz", allow_pickle=True)
 
-
 Pop_Size = 1000  # Population size
+N = 1000  # TODO: Change later!!!
 
 gamma = 1  # Works just as fine
 
 
-def part_2b_func(site):
-    answer = mutation_rate * (1 - (2 * site))
-    return answer
+def sum_mutant_allele_sites(generation: np.array, size: np.array, empty_array: np.array):
+    results = empty_array
+    for i, seq in enumerate(generation):
+        results += seq * size[i]
+    return results
+
+
+def part_2b_func(x_j):
+    """
+
+    :param x_j: site
+    :return: frequency * mutation calculation
+    """
+    two_b = mutation_rate * (1 - (2 * (x_j/N)))
+    return two_b
 
 
 def calc_xij(generation, i, j):
@@ -28,24 +40,27 @@ def calc_xij(generation, i, j):
         if total > 1:
             x_ij_count += 1
 
-    return x_ij_count
+    return x_ij_count/N
 
 
-def covariance_builder(generation: np.array, size: np.array):
-    covariance_matrix = np.zeros((50, 50))
-    generation_with_size = (generation.T * size).T
-    generation_with_size = sum(generation_with_size)
-    generation_with_size = generation_with_size / Pop_Size
+def covariance_builder(generation: np.array, size: np.array, dim: int):
+    covariance_matrix = np.zeros((dim, dim))
+    # generation_with_size = (generation.T * size).T
+    # generation_with_size = sum(generation_with_size)
+    generation_with_size = sum_mutant_allele_sites(generation=generation, size=size, empty_array=np.zeros(dim))
+    # generation_with_size = generation_with_size  # / Pop_Size
     covariance = []
     for i_idx, x_i_sum in enumerate(generation_with_size):
         covariance_list = []
         for j_idx, x_j_sum in enumerate(generation_with_size):
+            x_i_freq = x_i_sum/N
+            x_j_freq = x_j_sum/N
             if i_idx == j_idx:
-                covariance_diagonal = (x_i_sum * (1 - x_i_sum))
+                covariance_diagonal = (x_i_freq * (1 - x_i_freq))
                 covariance_list.append(covariance_diagonal)
             else:
                 x_ij = calc_xij(generation, i=i_idx, j=j_idx)
-                off_diagonal_covariance = (x_ij - (x_i_sum * x_j_sum))  # / sample_properties["pop_size"]
+                off_diagonal_covariance = (x_ij - (x_i_freq * x_j_freq))
                 covariance_list.append(off_diagonal_covariance)
         covariance.append(np.array(covariance_list))
     covariance = np.array(covariance)
@@ -55,33 +70,26 @@ def covariance_builder(generation: np.array, size: np.array):
 
 
 def inference(generations):
-    inferred_selections = []
     generations = np.load(generations, allow_pickle=True)
-    part_2_helper = 0
     part_2b_summation = 0
     covariance_matrix = np.zeros((50, 50))
     for gen_num, sequences in enumerate(generations["Sequence"]):
-        sizes = generations["Size"][gen_num]  # Gets the size of each sequence in the generation
-        complete_gen_sum = (sequences.T * sizes).T  # Multiplies the size by the generation to store the size in the seq
-        complete_gen_sum = sum(complete_gen_sum)
-        part_2_helper += complete_gen_sum
-
         """
         complete_gen_sum preserves the sequence information, and adds the number of individuals in a population that
                         that have the same genetic sequence.
-                        
+
         Using this information we will know the number of individuals where i=j. Where the sites of each individual is 
         the same and possess a mutation. Then we take it and multiply it by (1 - itself).
         """
 
-        generational_covariance = covariance_builder(generation=sequences, size=sizes)
+        sizes = generations["Size"][gen_num]
+        # complete_gen_sum = (sequences.T * sizes).T
+        # complete_gen_sum = sum(complete_gen_sum)
+        complete_gen_sum = sum_mutant_allele_sites(generation=sequences, size=sizes, empty_array=np.zeros(50))
+
+        generational_covariance = covariance_builder(generation=sequences, size=sizes, dim=50)
         covariance_matrix += generational_covariance
 
-        """
-        Given that K tracks time. We must stay in the outermost loop for the rest of the equation
-        """
-        # covariance = covariance / Pop_Size
-        # covariance_int += (covariance_matrix * delta_t).sum()
         part_2b_summation += np.array(list(map(part_2b_func, complete_gen_sum)))
 
     seq_0 = generations["Sequence"][0]
@@ -90,19 +98,18 @@ def inference(generations):
 
     seq_k = generations["Sequence"][-1]
     size_k = generations["Size"][-1]
-    x_k = sum((seq_k.T * size_k).T)  # Last generation info
+    # x_k = sum((seq_k.T * size_k).T)  # Last generation info
+    x_k = sum_mutant_allele_sites(generation=seq_k, size=size_k, empty_array=np.zeros(50))
 
     regularized_covariance = covariance_matrix + np.identity(50)
     inverted_covariance = np.linalg.inv(regularized_covariance)
-    for j_index, x_i in enumerate(part_2b_summation):
-        part_1 = inverted_covariance[j_index].sum()
-        part_2a = x_k[j_index] - x_0[j_index]
-        part_2b = x_i
+    inverted_covariance = np.einsum('ij->j', inverted_covariance)
+    p2 = ((x_k/N)-x_0) - part_2b_summation
 
-        s_i = part_1 * (part_2a - part_2b)
-        inferred_selections.append(s_i)
+    inferred_selections = inverted_covariance*p2
 
     selection_coefficients = sum(inferred_selections)
+
     print("Done!")
 
     return selection_coefficients
@@ -110,7 +117,7 @@ def inference(generations):
 
 inputs = [os.path.join("Data", file) for root, dirs, files in os.walk("Data", topdown=False) for file in files]
 
-answer = inference(inputs[45])
+answer = inference(inputs[3])
 
 """
 if __name__ == '__main__':
