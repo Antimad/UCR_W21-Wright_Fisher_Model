@@ -36,6 +36,15 @@ mutation = {
     "Dangerous Effectiveness": np.random.uniform(-.4, 0)
 }
 
+
+mutation = {
+    "Rate": 0.001,
+    "Beneficial": np.random.randint(s_length/2),
+    "Beneficial Effectiveness": 0.03,
+    "Dangerous": np.random.randint(s_length/2),
+    "Dangerous Effectiveness": np.random.uniform(-.4, 0)
+}
+
 base_population = {
     "Sequence": np.zeros(s_length),
     "Fitness": 1,
@@ -147,4 +156,4 @@ for generation in range(generations):
 
 info = pd.DataFrame(Data)
 info = info.T
-info.to_json("Results.json")
+info.to_json("Test_Results.json")

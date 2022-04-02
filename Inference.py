@@ -1,11 +1,9 @@
 import numpy as np
-import os
 import matplotlib.pyplot as plt
 
-mutation_rate = 0.0001
+mutation_rate = 0.002
 
-# Pop_Size = 1000  # Population size
-N = 1000 
+N = 10000
 # selection_coefficient  = 0.03
 
 gamma = 1  # Works just as fine
@@ -66,7 +64,6 @@ def covariance_builder(generation: np.array, size: np.array, dim: int):
 
 def inference(generations, seq_l):
     generations = np.load(generations, allow_pickle=True)
-    # generations.files = ["Size", "Sequence"]
     mutation_time_summation = np.zeros(seq_l)
     covariance_matrix = np.zeros((seq_l, seq_l))
     for gen_num, sequences in enumerate(generations["Sequence"]):
@@ -96,7 +93,6 @@ def inference(generations, seq_l):
 
     regularized_covariance = covariance_matrix + (np.identity(seq_l)/N)
     inverted_covariance = np.linalg.inv(regularized_covariance)
-    # inverted_covariance = np.einsum('ij->j', inverted_covariance)
     p2 = (x_k - x_0) - mutation_time_summation
 
     inferred_selections = inverted_covariance.dot(p2)
@@ -106,18 +102,13 @@ def inference(generations, seq_l):
     return inferred_selections
 
 
-gen = np.array([[1, 0, 0, 0, 1],
-               [1, 1, 0, 0, 0],
-               [1, 0, 1, 0, 1]])
-test_size = np.array([1, 1, 1])
-
-test_file = "Data/Test_Results_LowMutation.npz"
+test_file = "Data/Better_Samples_Size.npz"
 
 test_results = np.load(test_file, allow_pickle=True)
 
 
 def check_allele_frequency():
-    test_N = 1000
+    test_n = 10000
     time = list(range(101))
     seq = test_results["Sequence"]
     sz = test_results["Size"]
@@ -125,7 +116,7 @@ def check_allele_frequency():
     for gen_num, sequences in enumerate(seq):
         sizes = sz[gen_num]
         complete_gen_sum.append(sum_mutant_allele_sites(generation=sequences, size=sizes,
-                                                        empty_array=np.zeros(5))/test_N)
+                                                        empty_array=np.zeros(5))/test_n)
     plt.xlabel("Generation")
     plt.ylabel("Allele")
     plt.plot(time, complete_gen_sum)
@@ -140,9 +131,6 @@ def scatter():
     plt.savefig("scatter.png")
 
 
-# cov_test = covariance_builder(generation=gen, size=test_size, dim=5)
-
 # inputs = [os.path.join("Data", file) for root, dirs, files in os.walk("Data", topdown=False) for file in files]
 
-answer = inference(test_file, seq_l=5)
-
+answer = inference(test_file, seq_l=30)
