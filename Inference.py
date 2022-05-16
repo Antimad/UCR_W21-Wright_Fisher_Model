@@ -1,12 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-
-mutation_rate = 0.002
-
-N = 10000
-# selection_coefficient  = 0.03
-
-gamma = 1  # Works just as fine
 
 
 def sum_mutant_allele_sites(generation: np.array, size: np.array, empty_array: np.array):
@@ -26,15 +18,15 @@ def mutation_time_summation_func(x_j):
     return two_b
 
 
-def calc_xij(generation, i, j):
+def calc_xij(generation, i, j, sz):
     ith_column = generation[:, i]
     jth_column = generation[:, j]
 
     column_sum = ith_column + jth_column
     x_ij_count = 0
-    for total in column_sum:
+    for idx, total in enumerate(column_sum):
         if total > 1:
-            x_ij_count += 1
+            x_ij_count += sz[idx]
 
     return x_ij_count / N
 
@@ -52,7 +44,7 @@ def covariance_builder(generation: np.array, size: np.array, dim: int):
                 covariance_diagonal = (x_i_freq * (1 - x_i_freq))
                 covariance_list.append(covariance_diagonal)
             else:
-                x_ij = calc_xij(generation, i=i_idx, j=j_idx)
+                x_ij = calc_xij(generation, i=i_idx, j=j_idx, sz=size)
                 off_diagonal_covariance = (x_ij - (x_i_freq * x_j_freq))
                 covariance_list.append(off_diagonal_covariance)
         covariance.append(np.array(covariance_list))
@@ -91,9 +83,9 @@ def inference(generations, seq_l):
     size_k = generations["Size"][-1]
     x_k = sum_mutant_allele_sites(generation=seq_k, size=size_k, empty_array=np.zeros(seq_l))/N
 
-    regularized_covariance = covariance_matrix + (np.identity(seq_l)/N)
+    regularized_covariance = covariance_matrix + (np.identity(seq_l) / N)
     inverted_covariance = np.linalg.inv(regularized_covariance)
-    p2 = (x_k - x_0) - mutation_time_summation
+    p2 = x_k - x_0 - mutation_time_summation
 
     inferred_selections = inverted_covariance.dot(p2)
 
@@ -102,35 +94,10 @@ def inference(generations, seq_l):
     return inferred_selections
 
 
-test_file = "Data/Better_Samples_Size.npz"
-
-test_results = np.load(test_file, allow_pickle=True)
-
-
-def check_allele_frequency():
-    test_n = 10000
-    time = list(range(101))
-    seq = test_results["Sequence"]
-    sz = test_results["Size"]
-    complete_gen_sum = []
-    for gen_num, sequences in enumerate(seq):
-        sizes = sz[gen_num]
-        complete_gen_sum.append(sum_mutant_allele_sites(generation=sequences, size=sizes,
-                                                        empty_array=np.zeros(5))/test_n)
-    plt.xlabel("Generation")
-    plt.ylabel("Allele")
-    plt.plot(time, complete_gen_sum)
-    plt.savefig("5 sites.png")
+mutation_rate = 1e-3
+N = 1000
 
 
-def scatter():
-    x = answer
-    y = [0.3]*5
-    plt.close()
-    plt.scatter(x, y)
-    plt.savefig("scatter.png")
-
-
-# inputs = [os.path.join("Data", file) for root, dirs, files in os.walk("Data", topdown=False) for file in files]
-
-answer = inference(test_file, seq_l=30)
+def main(run_file):
+    answer = inference(run_file, seq_l=30)
+    return answer
