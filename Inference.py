@@ -89,8 +89,6 @@ def inference(generations, seq_l):
 
     inferred_selections = inverted_covariance.dot(p2)
 
-    print(inferred_selections)
-
     return inferred_selections
 
 
