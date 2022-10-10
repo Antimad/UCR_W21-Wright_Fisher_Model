@@ -18,8 +18,8 @@ Selection_Data = [dict({"File Name": os.path.join(folder, f), "Generations": 400
                   "Mutation Rate": 1e-3}) for f in os.listdir(folder) if os.path.isfile(os.path.join(folder, f))]
 
 # For WF
-WF_data = [dict({"File Name": x, "Generations": 400, "Selection": 0.02, "# of Selection": 10, "Sequence Length": 50,
-                 "Mutation Rate": 2e-3}) for x in range(1, 101)]
+WF_data = [dict({"File Name": x, "Generations": 400, "Selection": 0.02, "# of Selection": 100, "Sequence Length": 1000,
+                 "Mutation Rate": 1e-3, "Population Size": 1000}) for x in range(1, 101)]
 
 
 def wright_fisher(inputs):
